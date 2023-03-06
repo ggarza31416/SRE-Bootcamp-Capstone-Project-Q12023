@@ -1,8 +1,6 @@
-import mysql.connector
-from convert import CidrMaskConvert
+from convert import CidrMaskConvert, IpValidate
 from flask import Flask, abort, jsonify, request
 from methods import Restricted, Token
-from validate import IpValidate
 
 app = Flask(__name__)
 login = Token()
@@ -25,23 +23,13 @@ def urlHealth():
 
 # e.g. http://127.0.0.1:8000/login
 @app.route("/login", methods=["POST"])
-def urlLogin():
-    var1 = request.form["username"]
-    var2 = request.form["password"]
-    con = mysql.connector.connect(
-        host="sre-bootcamp-selection-challenge.cabf3yhjqvmq.us-east-1.rds.amazonaws.com",
-        user="secret",
-        password="jOdznoyH6swQB9sTGdLUeeSrtejWkcw",
-        database="bootcamp_tht",
-    )
-    cursor = con.cursor()
-    cursor.execute(f"SELECT salt, password, role from users where username ='{var1}';")
-    Query = cursor.fetchall()
-    var3 = login.generateToken(var1, var2, Query)
-    if var3 is not False:
-        r = {"data": var3}
-        return jsonify(r)
-    abort(401)
+def url_login():
+    user_name = request.form.get("username")
+    password = request.form.get("password")
+    if user_name is None or password is None:
+        return jsonify({"error": "Username and password are required."}), 400
+    jwt_token = login.generate_token(user_name, password)
+    return jwt_token
 
 
 # e.g. http://127.0.0.1:8000/cidr-to-mask?value=8
