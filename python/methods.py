@@ -48,16 +48,29 @@ class Token:
 
 
 class Restricted:
-    def access_Data(self, authorization):
+    def __init__(self):
+        # initiating the db connection by using env variables
+        self.key = os.environ["JWT_KEY"]
+        self.authorized_roles = ["admin", "editor", "viewer"]
+
+    def get_token(self, payload):
+        # getting just the token value from the payload
+        jwt_token = payload.replace("Bearer", "")[1:]
+        return jwt_token
+
+    def decode_token(self, payload):
+        token_value = self.get_token(payload)
         try:
-            var1 = jwt.decode(
-                authorization.replace("Bearer", "")[1:],
-                "my2w7wjd7yXF64FIADfJxNs1oupTGAuW",
+            decoded_token = jwt.decode(
+                token_value,
+                self.key,
                 algorithms="HS256",
             )
-        except Exception as e:
-            return False
-        if "role" in var1:
+            return decoded_token
+        except Exception:
+            return None
+
+    def is_authorized(self, jwt_decoded_token):
+        if jwt_decoded_token["role"] in self.authorized_roles:
             return True
-        else:
-            return False
+        return False
