@@ -71,6 +71,7 @@ class Restricted:
             return None
 
     def is_authorized(self, jwt_decoded_token):
+        # checking the role is one of the 3 valid according to documentation
         if jwt_decoded_token["role"] in self.authorized_roles:
             return True
         return False
