@@ -1,4 +1,4 @@
-from convert import CidrMaskConvert, IpValidate
+from convert import CidrMaskConvert
 from flask import Flask, jsonify, request
 from methods import Restricted, Token
 
@@ -6,10 +6,11 @@ app = Flask(__name__)
 login = Token()
 protected = Restricted()
 convert = CidrMaskConvert()
-validate = IpValidate()
 
 
+# general function to handle requests
 def handle_request(request_header, request_value, conversion_function):
+    # validation input attributes
     if not request_header or not request_value:
         return jsonify({"error":
                         "Authorization Header and Value are required."}), 400
@@ -51,6 +52,8 @@ def url_login():
     return jwt_token
 
 
+# endpoint for converting cidr prefix to mask
+# e.g. http://127.0.0.1:8000/cidr-to-mask?value=1
 @app.route("/cidr-to-mask")
 def url_cidr_to_mask():
     request_header = request.headers.get("Authorization")
@@ -58,6 +61,8 @@ def url_cidr_to_mask():
     return handle_request(request_header, request_value, convert.cidr_to_mask)
 
 
+# endpoint for converting netmask to cidr
+# e.g. http://127.0.0.1:8000/mask-to-cidr?value=128.0.0.0
 @app.route("/mask-to-cidr")
 def url_mask_to_cidr():
     request_header = request.headers.get("Authorization")
