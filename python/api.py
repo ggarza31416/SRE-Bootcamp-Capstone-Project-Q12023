@@ -1,5 +1,5 @@
 from convert import CidrMaskConvert, IpValidate
-from flask import Flask, abort, jsonify, request
+from flask import Flask, jsonify, request
 from methods import Restricted, Token
 
 app = Flask(__name__)
@@ -9,15 +9,34 @@ convert = CidrMaskConvert()
 validate = IpValidate()
 
 
+def handle_request(request_header, request_value, conversion_function):
+    if not request_header or not request_value:
+        return jsonify({"error":
+                        "Authorization Header and Value are required."}), 400
+    decoded_token = protected.decode_token(request_header)
+    if decoded_token is None:
+        return jsonify({"error": "You entered an invalid JWT token."}), 400
+    is_authorized = protected.is_authorized(decoded_token)
+    if is_authorized:
+        response = {
+            "function": conversion_function.__name__,
+            "input": request_value,
+            "output": conversion_function(request_value),
+        }
+        return jsonify(response)
+    return jsonify({"error":
+                    "You Role is not authorized to perform this action"}), 401
+
+
 # Just a health check
 @app.route("/")
-def urlRoot():
+def url_root():
     return "OK"
 
 
 # Just a health check
 @app.route("/_health")
-def urlHealth():
+def url_health():
     return "OK"
 
 
@@ -32,42 +51,18 @@ def url_login():
     return jwt_token
 
 
-# e.g. http://127.0.0.1:8000/cidr-to-mask?value=8
 @app.route("/cidr-to-mask")
 def url_cidr_to_mask():
     request_header = request.headers.get("Authorization")
     request_value = request.args.get("value")
-    if not request_header or not request_value:
-        return jsonify({"error":
-                        "Authorization Header and Value are required."}), 400
-    decoded_token = protected.decode_token(request_header)
-    if decoded_token is None:
-        return jsonify({"error": "You entered an invalid JWT token."}), 400
-    is_authorized = protected.is_authorized(decoded_token)
-    if is_authorized:
-        response = {
-            "function": "cidrToMask",
-            "input": request_value,
-            "output": convert.cidr_to_mask(request_value),
-        }
-        return jsonify(response)
-    return jsonify({"error":
-                    "You Role is not authorized to perform this action"}), 401
+    return handle_request(request_header, request_value, convert.cidr_to_mask)
 
 
-# # e.g. http://127.0.0.1:8000/mask-to-cidr?value=255.0.0.0
 @app.route("/mask-to-cidr")
-def urlMaskToCidr():
-    var1 = request.headers.get("Authorization")
-    if not protected.access_Data(var1):
-        abort(401)
-    val = request.args.get("value")
-    r = {
-        "function": "maskToCidr",
-        "input": val,
-        "output": convert.mask_to_cidr(val),
-    }
-    return jsonify(r)
+def url_mask_to_cidr():
+    request_header = request.headers.get("Authorization")
+    request_value = request.args.get("value")
+    return handle_request(request_header, request_value, convert.mask_to_cidr)
 
 
 if __name__ == "__main__":
