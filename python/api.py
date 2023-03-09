@@ -37,16 +37,9 @@ def url_login():
 def url_cidr_to_mask():
     request_header = request.headers.get("Authorization")
     request_value = request.args.get("value")
-    if request_header is None or request_value is None:
-        return (
-            jsonify(
-                {
-                    "error": """Authorization HTTP header
-            and Value is required."""
-                }
-            ),
-            400,
-        )
+    if not request_header or not request_value:
+        return jsonify({"error":
+                        "Authorization Header and Value are required."}), 400
     decoded_token = protected.decode_token(request_header)
     if decoded_token is None:
         return jsonify({"error": "You entered an invalid JWT token."}), 400
@@ -58,15 +51,8 @@ def url_cidr_to_mask():
             "output": convert.cidr_to_mask(request_value),
         }
         return jsonify(response)
-    return (
-        jsonify(
-            {
-                "error": """You Role is not authorized
-    to perform this action"""
-            }
-        ),
-        401,
-    )
+    return jsonify({"error":
+                    "You Role is not authorized to perform this action"}), 401
 
 
 # # e.g. http://127.0.0.1:8000/mask-to-cidr?value=255.0.0.0
